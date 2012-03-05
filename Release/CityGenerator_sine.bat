@@ -1,0 +1,1 @@
+CityGenerator -f input_ter.txt -d density.png -e elevation_sinusoid.png -l legality.png

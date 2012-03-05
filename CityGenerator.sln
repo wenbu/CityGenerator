@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CityGenerator", "CityGenerator\CityGenerator.vcxproj", "{4FBA30AA-45B5-4011-BFA9-3B2C0E928503}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{38D7843E-D0BD-4787-BDA7-5AF377C5056F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4FBA30AA-45B5-4011-BFA9-3B2C0E928503}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4FBA30AA-45B5-4011-BFA9-3B2C0E928503}.Debug|Win32.Build.0 = Debug|Win32
+		{4FBA30AA-45B5-4011-BFA9-3B2C0E928503}.Release|Win32.ActiveCfg = Release|Win32
+		{4FBA30AA-45B5-4011-BFA9-3B2C0E928503}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

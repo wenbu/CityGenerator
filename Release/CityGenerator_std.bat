@@ -1,0 +1,1 @@
+cityGenerator -f input.txt -d density.png -e elevation.png -l legality.png

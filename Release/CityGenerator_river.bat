@@ -1,0 +1,1 @@
+cityGenerator -f input_ter_sm.txt -d elevation_river.png -e elevation_river.png -l legality.png
