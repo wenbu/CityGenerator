@@ -55,13 +55,16 @@ vector<Polygon>		buildings;
 
 bool gotBlocks =	false;
 bool gotLots =		false;
+bool debug =		false;
 
-double scale =		1;
-double translateX =	0;
-double translateY =	0;
-double rotateX =	0;
-double rotateY =	0;
-double rotateZ =	0;
+double scale =			1;
+double translateX =		0;
+double translateY =		0;
+double rotateX =		0;
+double rotateY =		0;
+double rotateZ =		0;
+double wMult =			1;
+double debugOffset =	0;
 
 //****************************************************
 // reshape viewport if the window is resized
@@ -90,10 +93,11 @@ void myReshape(int w, int h) {
 // sets the window up
 //****************************************************
 void initScene(int &argc, char* argv[]){
-	glClearColor(1, 1, 1, 0.0f); // Clear to black, fully transparent
+	glClearColor(1,1,1, 0.0f); // Clear to black, fully transparent
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_NORMALIZE);
 	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_LEQUAL);
 
@@ -108,37 +112,49 @@ void initScene(int &argc, char* argv[]){
 	printf("(Space) for one iteration, (x) for 100, (z) for 1000\n");
 	printf("(i, k) to zoom, (arrows) to pan\n");
 	printf("(d) to dump roads to MEL\n");
+	printf("(f) to debug lots\n");
 	printf("(p) to extract city blocks and proceed to lot subdivision\n");
 }
 
-void drawPolygon(Polygon &p) {
+void drawPolygon(Polygon &p, double zOffset = 0) {
 	glBegin(GL_POLYGON);
 		for(unsigned i = 0; i < p.vertices.size(); i++) {
 			glVertex3f(p.vertices[i][0],
 					   p.vertices[i][1],
-					   p.vertices[i][2]);
+					   p.vertices[i][2] + zOffset);
 		}
 	glEnd();
 }
 
-void drawWirePolygon(Polygon &p) {
+void drawWirePolygon(Polygon &p, double zOffset = 0) {
 	//printf("p: \n");
 	for(unsigned i = 0; i < p.vertices.size(); i++) {
 		//printf("    %f, %f\n", p.vertices[i][0], p.vertices[i][1]);
 		glBegin(GL_LINE_STRIP);
 		glVertex3f(p.vertices[i][0],
 				   p.vertices[i][1],
-				   p.vertices[i][2]);
+				   p.vertices[i][2] + zOffset);
 			if(i != p.vertices.size()-1) {
 				glVertex3f(p.vertices[i+1][0],
 						   p.vertices[i+1][1],
-						   p.vertices[i+1][2]);
+						   p.vertices[i+1][2] + zOffset);
 			} else {
 				glVertex3f(p.vertices[0][0],
 						   p.vertices[0][1],
-						   p.vertices[0][2]);
+						   p.vertices[0][2] + zOffset);
 			}
 		glEnd();
+	}
+	if(debug) {
+		glPointSize(3);
+		glColor3f(0, 0, 0);
+		for(unsigned i = 0; i < p.vertices.size(); i++) {
+			glBegin(GL_POINTS);
+			glVertex3f(p.vertices[i][0],
+					   p.vertices[i][1],
+					   p.vertices[i][2] + zOffset);
+			glEnd();
+		}
 	}
 }   
 
@@ -157,36 +173,44 @@ void drawStuff() {
 		//printf("lg.lots.size = %i\n", lg.lots.size());
 		for(unsigned i = 0; i < lots.size(); i++) {
 			//glColor3f(0, 1, 0);
-			glColor3f(0.16, 0.64, 0.32);
-			drawPolygon(lg.lots[i].lot);
+			glColor4f(0.16, 0.64, 0.32, 0.2);
+			drawPolygon(lots[i].lot, i*debugOffset);
 			glColor3f(0,0,0);
-			drawWirePolygon(lg.lots[i].lot);
+			drawWirePolygon(lots[i].lot, i*debugOffset);
 		}
+	}
+	if(debug) {
+		Polygon p;
+		p.vertices.push_back(Vector3d(0.398803, 0.363752, 0));
+		p.vertices.push_back(Vector3d(0.407103, 0.352854, 0));
+		p.vertices.push_back(Vector3d(0.414602, 0.357363, 0));
+		p.vertices.push_back(Vector3d(0.408383, 0.371349, 0));
+		p.vertices.push_back(Vector3d(0.401586, 0.36584, 0));
+		drawWirePolygon(p);
+		lg.draw();
 	}
 }
 
 void dumpLots() {
-	if(stage == CS_LOTS && gotLots) {
-		ofstream outputFile;
-		outputFile.open("lots.obj");
-		for(unsigned i = 0; i < lots.size(); i++) {
-			for(unsigned j = 0; j < lots[i].lot.vertices.size(); j++) {
-				outputFile << "v ";
-				outputFile << lots[i].lot.vertices[j][0] << " ";
-				outputFile << lots[i].lot.vertices[j][2] << " ";
-				outputFile << lots[i].lot.vertices[j][1] << " ";
-				outputFile << endl;
-			}
-		}
-		int vertexCounter = 0;
-		for(unsigned i = 0; i < lots.size(); i++) {
-			outputFile << "f ";
-			for(unsigned j = 0; j < lots[i].lot.vertices.size(); j++) 
-				outputFile << ++vertexCounter << " ";
+	ofstream outputFile;
+	outputFile.open("lots.obj");
+	for(unsigned i = 0; i < lots.size(); i++) {
+		for(unsigned j = 0; j < lots[i].lot.vertices.size(); j++) {
+			outputFile << "v ";
+			outputFile << lots[i].lot.vertices[j][0] << " ";
+			outputFile << lots[i].lot.vertices[j][2] << " ";
+			outputFile << lots[i].lot.vertices[j][1] << " ";
 			outputFile << endl;
 		}
-		outputFile.close();
 	}
+	int vertexCounter = 0;
+	for(unsigned i = 0; i < lots.size(); i++) {
+		outputFile << "f ";
+		for(unsigned j = 0; j < lots[i].lot.vertices.size(); j++) 
+			outputFile << ++vertexCounter << " ";
+		outputFile << endl;
+	}
+	outputFile.close();
 }
 
 //***************************************************
@@ -250,31 +274,76 @@ void grow(int n) {
 	glutTimerFunc(50, grow, n);
 }
 
+void debugLots() {
+	lots.clear();
+	debugOffset = 0.005;
+	vector<Polygon> debugBlocks;
+	Polygon p;
+	/*
+	v 0.398803 0 0.363752 
+	v 0.407103 0 0.352854 
+	v 0.414602 0 0.357363 
+	v 0.408383 0 0.371349 
+	v 0.401586 0 0.36584
+	*/
+	p.vertices.push_back(Vector3d(0.398803, 0.363752, 0));
+	p.vertices.push_back(Vector3d(0.407103, 0.352854, 0));
+	p.vertices.push_back(Vector3d(0.414602, 0.357363, 0));
+	p.vertices.push_back(Vector3d(0.408383, 0.371349, 0));
+	p.vertices.push_back(Vector3d(0.401586, 0.36584, 0));
+	
+	/*
+	v 0.398803 0 0.363752 
+	v 0.40167 0 0.359988 
+	v 0.411493 0 0.364356 
+	v 0.408383 0 0.371349 
+	v 0.401586 0 0.36584
+	*/
+	/*
+	p.vertices.push_back(Vector3d(0.398803, 0.363752, 0));
+	p.vertices.push_back(Vector3d(0.40167, 0.359988, 0));
+	p.vertices.push_back(Vector3d(0.411493, 0.364356, 0));
+	p.vertices.push_back(Vector3d(0.408383, 0.371349, 0));
+	p.vertices.push_back(Vector3d(0.401586, 0.36584, 0));
+	*/
+
+	debugBlocks.push_back(p);
+	lg = LotGenerator(debugBlocks,
+									parser.get(LOT_EDGE_MAX_WIDTH)*wMult,
+									0, //area
+									parser.get(LOT_SPLIT_DEVIANCE),
+									is);
+	lg.getLots(lots);
+	gotLots = true;
+	debug = true;
+	stage = CS_BUILDINGS;
+}
+
 void mySpecial(int key, int x, int y) {
 	int mod = glutGetModifiers();
 	if(key == GLUT_KEY_LEFT) {
 		if(mod == GLUT_ACTIVE_SHIFT)
 			rotateX += 1;
 		else
-			translateX += 0.1;
+			translateX += (0.1/scale);
 	}
 	if(key == GLUT_KEY_RIGHT) {
 		if(mod == GLUT_ACTIVE_SHIFT)
 			rotateX -= 1;
 		else
-			translateX -= 0.1;
+			translateX -= (0.1/scale);
 	}
 	if(key == GLUT_KEY_UP) {
 		if(mod == GLUT_ACTIVE_SHIFT)
 			rotateY += 1;
 		else
-			translateY += 0.1;
+			translateY += (0.1/scale);
 	}
 	if(key == GLUT_KEY_DOWN) {
 		if(mod == GLUT_ACTIVE_SHIFT)
 			rotateY -= 1;
 		else
-			translateY -= 0.1;
+			translateY -= (0.1/scale);
 	}
 }
 
@@ -297,13 +366,34 @@ void keyboard(unsigned char key, int x, int y) {
 	if(key == 'k') {
 		scale /= 1.1;
 	}
+	if(key == 'u') {
+		wMult += 0.05;
+		debugLots();
+	}
+	if(key == 'j') {
+		wMult -= 0.05;
+		debugLots();
+	}
 	if(key == 'd') {
 		if(stage == CS_ROADS) {
+			printf("dumping roads to roads.mel...");
 			roadsystem.dumpRoads();
+			printf("done!\n");
 		}
 		if(stage == CS_LOTS) {
+			printf("dumping blocks to blocks.obj...");
 			roadsystem.dumpPolygons();
+			printf("done!\n");
 		}
+		if(stage == CS_BUILDINGS) {
+			printf("dumping lots to lots.obj...");
+			dumpLots();
+			printf("done!\n");
+		}
+	}
+	if(key == 'f') {
+		printf("debugging\n");
+		debugLots();
 	}
 	if(key == 'p') {
 		switch(stage) {
@@ -319,6 +409,7 @@ void keyboard(unsigned char key, int x, int y) {
 			printf("Lot Subdivision\n");
 			printf("(p) to generate lots\n");
 			printf("(d) to dump polygons\n");
+			printf("(f) to debug lots\n");
 			printf("The code likes to blow up at this stage :(\n");
 			printf("If it does, just restart the program\n");
 			break;
@@ -335,6 +426,7 @@ void keyboard(unsigned char key, int x, int y) {
 			printf("-------------------------------------\n");
 			printf("Building Generation\n");
 			printf("(p) to generate buildings\n");
+			printf("(d) to dump lots\n");
 			printf("output will be written to outputFile.obj\n");
 			break;
 		case(CS_BUILDINGS):

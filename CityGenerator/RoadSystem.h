@@ -15,6 +15,8 @@
 #include <iostream>
 #include <fstream>
 
+#define DEBUG true
+
 using namespace std;
 using namespace Eigen;
 
@@ -189,6 +191,11 @@ class RoadSystem {
 	Edges edges;
 	vector<Polygon> polys;
 	vector<EdgeKey> deletedEdges;
+	// vector6d: x, y, z, r, g, b
+	typedef Matrix<double, 6, 1> Vector6d;
+	vector<Vector6d> debugVerts;
+	vector<Vector6d> debugEdges;
+	vector<Vector6d> debugQuads;
 	bool gotPolys;
 	//vector<const Road> roadDrawBuffer;
 	//vector<const Intersection> intersectionDrawBuffer;
@@ -224,6 +231,7 @@ public:
 private:
 	void acceptProposal(ProposedEdge &pe, int &i0, int &i1);
 	
+	// todo: need to re-query for verts again post-clip
 	bool snapIntersections(ProposedEdge &e, vector<QuadPoint*> &nearIntersections, double &cost);
 	bool clipRoad(ProposedEdge &e, vector<QuadPoint*> &nearRoads, double &cost);
 	bool checkLegality(ProposedEdge &e, double &cost);
@@ -249,6 +257,9 @@ private:
 	/************
 	* util funcs
 	************/
+	//draw the edges contained in debugEdges
+	void drawDebug() const;
+
 	//query quadtree for verts/edges within the quad defined by [q0, q1, q2, q3]
 	void getVertices(Vector3d q0, Vector3d q1, Vector3d q2, Vector3d q3, vector<const Vertex*> &verts);
 	void getEdges(Vector3d q0, Vector3d q1, Vector3d q2, Vector3d q3, set<const EdgeKey> &edges);

@@ -2,6 +2,8 @@
 #include "Lot.h"
 #include "Polygon.h"
 #include "ImageSampler.h"
+#include <GL/glut.h>
+#include <GL/glu.h>
 #include <math.h>
 #include <map>
 #include <queue>
@@ -18,15 +20,21 @@ public:
 	int skippedVertex;
 	ImageSampler is;
 	vector<Polygon> polygons;
+	vector<Polygon> drawBuffer;
+	vector<Vector3d> edgeBuffer;
 	vector<Lot> lots;
 
 	LotGenerator(void);
 	~LotGenerator(void);
 	LotGenerator(vector<Polygon> b, double width, double deviance, double area, ImageSampler &img);
-	void getLots(vector<Lot> &lots);
+	void getLots(vector<Lot> &result);
 	void subdivide(); 
+	void subdivideBlock(Polygon &block, vector<Polygon> &result);
 	void subdivideBlock(Polygon &lot, vector<Lot> &lots);
+	void split(Polygon &cutBlock, vector<Polygon> &result);
+	void draw();
 
+	//finds intersection of segments x1-x2 and y1-y2, if exists
 	static bool intersection3d(Vector3d& x1, Vector3d& x2, Vector3d& y1, Vector3d& y2, Vector3d& intersection);
 	void splitPolygon(Polygon& p, Vector3d& slStart, Vector3d& slEnd, vector<Polygon>& polys);
 	void split(int startIndex, vector<vector<Vector3d>>& polys, 

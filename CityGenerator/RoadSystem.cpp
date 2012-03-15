@@ -407,7 +407,7 @@ void RoadSystem::addAxiom(double x0, double y0, double x1, double y1) {
 	
 	ProposedEdge e(0, RT_AXIOM, 0, 0, axiomVerts, axiomVerts+1);
 	roadQueue.push(e);
-	printf("pushing edge %i-%i\n", axiomVerts, axiomVerts+1);
+	//printf("pushing edge %i-%i\n", axiomVerts, axiomVerts+1);
 	axiomVerts += 2;
 }
 
@@ -482,6 +482,11 @@ void RoadSystem::generate(int iterations) {
  	gotPolys = false;
 	for(int i = 0; i < iterations; i++) {
 		if(!roadQueue.empty() && iterations > 0) {
+			if(DEBUG) {
+				debugQuads.clear();
+				debugEdges.clear();
+				debugVerts.clear();
+			}
 			ProposedEdge pr = roadQueue.top();
 			roadQueue.pop();
 			bool accepted = localConstraints(pr);
@@ -497,41 +502,71 @@ void RoadSystem::generate(int iterations) {
 }
 
 bool RoadSystem::localConstraints(ProposedEdge &e) {
-	vector<QuadPoint*> nearV;
-	vector<QuadPoint*> nearE;
-	//construct query box
-	//assume second endpoint is terminal & proposed
-	Vertex* vert0 = (Vertex*) getVertex(e.V[0]);
-	Vector3d v0 = vert0->position;
-	Vector3d v1 = e.newVertices[1];
-	Vector3d unitEdge = (v1 - v0).normalized();
-	Vector3d perpEdge = Vector3d(-unitEdge[1], unitEdge[0], 0);
-
-	//vertex query
-	Vector3d qv = QUERY_DIST * unitEdge;
-	Vector3d qvp = QUERY_DIST * perpEdge;
-	Vector3d q0 = v0 - qvp;
-	Vector3d q1 = v1 + qv - qvp;
-	Vector3d q2 = v1 + qv + qvp;
-	Vector3d q3 = v0 + qvp;
-	qtree.query(q0, q1, q2, q3, nearV);
-
-	//edge query
-	qv *= 2;
-	qvp *= 2;
-	q0 = v0 - qvp;
-	q1 = v1 + qv - qvp;
-	q2 = v1 + qv + qvp;
-	q3 = v0 + qvp;
-	qtree.query(q0, q1, q2, q3, nearE);
-
 	double cost = 0;
 	double origLen = getLength(e);
 
 	//if either point is proposed, do clip/snap checks
 	if(e.V[0] < 0 || e.V[1] < 0) {
+		vector<QuadPoint*> nearV;
+		vector<QuadPoint*> nearE;
+		Vertex* vert0 = (Vertex*) getVertex(e.V[0]);
+		Vector3d v0 = vert0->position;
+		Vector3d v1 = e.newVertices[1];
+		Vector3d unitEdge = (v1 - v0).normalized();
+		Vector3d perpEdge = Vector3d(-unitEdge[1], unitEdge[0], 0);
+
+		//edge query
+		Vector3d qv = 2 * QUERY_DIST * unitEdge;
+		Vector3d qvp = 2 * QUERY_DIST * perpEdge;
+		Vector3d q0 = v0 - qvp;
+		Vector3d q1 = v1 + qv - qvp;
+		Vector3d q2 = v1 + qv + qvp;
+		Vector3d q3 = v0 + qvp;
+		qtree.query(q0, q1, q2, q3, nearE);
+		if(DEBUG) {
+			//edge pre-clip
+			debugEdges.push_back((Vector6d() << v0, 0.3, 0.1, 0.1).finished());
+			debugEdges.push_back((Vector6d() << v1, 0.3, 0.1, 0.1).finished());
+		}
 		clipRoad(e, nearE, cost);
+
+		//get vert query box
+		//assume second vert is proposed
+		v1 = e.newVertices[1];
+		unitEdge = (v1 - v0).normalized();
+		perpEdge = Vector3d(-unitEdge[1], unitEdge[0], 0);
+		qv = QUERY_DIST * unitEdge;
+		qvp = QUERY_DIST * perpEdge;
+		q0 = v1 - 0.5 * qv - 0.5 * qvp;
+		q1 = v1 + qv - qvp;
+		q2 = v1 + qv + qvp;
+		q3 = v1 - 0.5 * qv + 0.5 * qvp;
+		qtree.query(q0, q1, q2, q3, nearV);
+
+		if(DEBUG) {
+			debugQuads.push_back((Vector6d() << q0, 0.5, 0.25, 0).finished());
+			debugQuads.push_back((Vector6d() << q1, 0.5, 0.25, 0).finished());
+			debugQuads.push_back((Vector6d() << q2, 0.5, 0.25, 0).finished());
+			debugQuads.push_back((Vector6d() << q3, 0.5, 0.25, 0).finished());
+			for(unsigned i = 0; i < nearV.size(); i++) {
+				debugVerts.push_back((Vector6d() << nearV[i]->position, 1, 0, 1).finished());
+			}
+
+			// edge post-clip, pre-snap
+			debugEdges.push_back((Vector6d() << v0, 0.5, 0, 0).finished());
+			debugEdges.push_back((Vector6d() << v1, 0.5, 0, 0).finished());
+		}
+
 		snapIntersections(e, nearV, cost);
+		if(DEBUG) {
+			// edge post-snap
+			debugEdges.push_back((Vector6d() << v0, 0, 1, 0).finished());
+			if(e.V[1] >= 0)
+				v1 = ((Vertex*) getVertex(e.V[1]))->position;
+			else
+				v1 = e.newVertices[1];
+			debugEdges.push_back((Vector6d() << v1, 0, 1, 0).finished());
+		}
 	}
 	if(checkLegality(e, cost)) {
 		double newLen = getLength(e);
@@ -690,14 +725,19 @@ bool RoadSystem::snapIntersections(ProposedEdge &e,
 								   double &cost) {
 	if(nV.size() == 0) return false;
 
-	int i0 = e.V[0];
 	/*
+	int i0 = e.V[0];
 	double x1 = e.newVertices[1][0];
 	double y1 = e.newVertices[1][1];
 	Vector3d vpIsec(x1, y1, 0);
-	*/
 	Vertex* v0 = (Vertex*) getVertex(i0);
 	Vector3d vpIsec = v0->position;
+	*/
+	int i0 = e.V[0];
+	if(e.V[1] >= 0) return false; //don't move existing verts
+	double x1 = e.newVertices[1][0];
+	double y1 = e.newVertices[1][1];
+	Vector3d vpIsec(x1, y1, 0);
 
 	//find nearest vertex
 	double dist = 1e20;
@@ -716,12 +756,16 @@ bool RoadSystem::snapIntersections(ProposedEdge &e,
 
 	if(best < 0) return false;
 	Vertex* v2 = (Vertex*) getVertex(best);
+	if(DEBUG) {
+		debugVerts.push_back((Vector6d() << v2->position, 1, 0, 0).finished());
+	}
 	double x2 = v2->position[0];
 	double y2 = v2->position[1];
 
-	if(dist > SNAP_THRESHOLD)
+	if(dist > SNAP_THRESHOLD) {
+		//printf("distance too high; snap rejected\n");
 		return false;
-	else {
+	} else {
 		//cost = distance moved
 		cost += dist;
 		//calculate cost/bonus for vertex valence
@@ -831,26 +875,53 @@ bool RoadSystem::checkLegality(ProposedEdge &e, double &cost) {
 		//check against all other edges out of v0
 		//get dot product, reject if too high
 		//i.e. no slivers
-		Vertex* v0 = (Vertex*) getVertex(e.V[0]);
-		Vector3d e0;
+		Vertex* vert0 = (Vertex*) getVertex(e.V[0]);
+		Vector3d v0 = vert0->position;
+		Vector3d v1;
+		Vector3d unitEdge;
 		if(e.V[1] < 0)
-			e0 = (v0->position - e.newVertices[1]).normalized();
+			v1 = e.newVertices[1];
 		else
-			e0 = (v0->position - ( (Vertex*) getVertex(e.V[1]))->position).normalized();
+			v1 = ((Vertex*) getVertex(e.V[1]))->position;
+		unitEdge = (v0 - v1).normalized();
 
-		const vector<Vertex*> adj = v0->adjacent;
+		const vector<Vertex*> adj = vert0->adjacent;
 		for(unsigned i = 0; i < adj.size(); i++) {
 			//get edge
-			Vertex* v2 = adj[i];
-			Vector3d e1 = (v0->position - v2->position).normalized();
+			Vertex* vert2 = adj[i];
+			Vector3d v2 = vert2->position;
+			Vector3d adjEdge = (v0 - v2).normalized();
 			//cos(20 deg) ~= 0.94
-			double dot = e0.dot(e1);
+			double dot = unitEdge.dot(adjEdge);
 			if(dot > 0.94) return false;
 		}
-		//query for verts in vicinity
+		//query for verts in vicinity, check for stuff close by
 		//assemble query box
-
-
+		/*
+		vector<QuadPoint*> nearV;
+		Vector3d perpEdge = Vector3d(-unitEdge[1], unitEdge[0], 0);
+		Vector3d qv = QUERY_DIST * -unitEdge; //negative since unitEdge here is v1->v0
+		Vector3d qp = QUERY_DIST * perpEdge;
+		//Vector3d qf = -0.1 * QUERY_DIST * -unitEdge;
+		Vector3d q0 = v1 - 0.5* qv - 0.5 * qp;
+		Vector3d q1 = v1 + qv - qp;
+		Vector3d q2 = v1 + qv + qp;
+		Vector3d q3 = v1 - 0.5* qv + 0.5 * qp;
+		qtree.query(q0, q1, q2, q3, nearV);
+		//what's the expected amount of stuff in nearV?
+		if(DEBUG) {
+			int nVerts = nearV.size() - 1; //dont want to count root of road
+			if(e.V[1] >= 0) nVerts -= 1; //dont want to count terminal if exists
+			printf("verts in box: %i\n", nVerts);
+			debugQuads.push_back((Vector6d() << q0, 1, 0, 0).finished());
+			debugQuads.push_back((Vector6d() << q1, 1, 0.25, 0).finished());
+			debugQuads.push_back((Vector6d() << q2, 1, 0.5, 0).finished());
+			debugQuads.push_back((Vector6d() << q3, 1, 0.75, 0).finished());
+			debugEdges.push_back((Vector6d() << v0, 0, 1, 0).finished());
+			debugEdges.push_back((Vector6d() << v1, 0, 0, 1).finished());
+		}
+		*/
+		
 		//todo: have road follow contour of boundary
 		return legal(e.newVertices[1][0], e.newVertices[1][1]);
 	}
@@ -957,6 +1028,50 @@ void RoadSystem::getPolygons() {
 	}
 }
 
+void RoadSystem::drawDebug() const {
+	//draw quads
+	//assume debugQuads.size%4 = 0
+	for(unsigned i = 0; i < debugQuads.size(); i += 4) {
+		Vector6d quads[4] = { debugQuads[i], 
+							  debugQuads[i+1], 
+							  debugQuads[i+2], 
+							  debugQuads[i+3] };
+		glBegin(GL_LINE_STRIP);
+			for(unsigned j = 0; j < 4; j++) {
+				glColor3f(quads[j][3], quads[j][4], quads[j][5]);
+				glVertex3f(quads[j][0], quads[j][1], 0);
+			}
+			glColor3f(quads[0][3], quads[0][4], quads[0][5]);
+			glVertex3f(quads[0][0], quads[0][1], 0);
+		glEnd();
+	}
+	//draw edges
+	//assume debugEdges has even size; consecutive verts = edge
+	for(unsigned i = 0; i < debugEdges.size(); i += 2) {
+		Vector6d pts[2] = { debugEdges[i],
+							debugEdges[i+1] };
+		glBegin(GL_LINE_STRIP);
+			for(unsigned j = 0; j < 2; j++) {
+				glColor3f(pts[j][3], pts[j][4], pts[j][5]);
+				glVertex3f(pts[j][0], pts[j][1], 0);
+			}
+		glEnd();
+	}
+	//draw verts
+	//glPointSize(3);
+	for(unsigned i = 0; i < debugVerts.size(); i++) {
+		Vector6d v = debugVerts[i];
+		if(v[3] == 1 && v[4] == 0 && v[5] == 0)
+			glPointSize(5);
+		else
+			glPointSize(3);
+		glBegin(GL_POINTS);
+		glColor3f(v[3], v[4], v[5]);
+		glVertex3f(v[0], v[1], 0);
+		glEnd();
+	}
+}
+
 void RoadSystem::draw(bool drawBlocks, bool drawQuadTree) const {
 	double x0, y0, z0, x1, y1, z1;
 	if(drawQuadTree)
@@ -976,7 +1091,8 @@ void RoadSystem::draw(bool drawBlocks, bool drawQuadTree) const {
 		glEnd();
 	}
 	*/
-	//for(unsigned i = 0; i < roads.size(); i++) {
+	if(DEBUG)
+		drawDebug();
 	for(Edges::const_iterator iter = edges.begin();
 		iter != edges.end(); ++iter) {
 		
@@ -1037,7 +1153,6 @@ void RoadSystem::reset() {
 	qtree.reset();
 }
 
-
 bool RoadSystem::areConnected(int i0, int i1) const {
 	Vertex* v0 = (Vertex*) getVertex(i0);
 	Vertex* v1 = (Vertex*) getVertex(i1);
@@ -1067,23 +1182,6 @@ bool RoadSystem::areConnected(Vertex* v0, Vertex* v1) const {
 	//check edge exists in edges
 	EdgeKey e = EdgeKey(v0->index, v1->index);
 	b_e = edges.count(e);
-	/*
-	if(b_v0)
-		printf("");
-		//printf("v0 lists v1 in adjacency list\n");
-	else
-		printf("\"\" v0 does not list v1 in adjacency list\n");
-	if(b_v1)
-		printf("");
-		//printf("v1 lists v0 in adjacenct list\n");
-	else
-		printf("\"\" v1 does not list v1 in adjacency list\n");
-	if(b_e)
-		printf("");
-		//printf("edge v0,v1 exists in edge list\n");
-	else
-		printf("\"\" edge v0,v1 does not exist in edge list\n");
-	*/
 	return b_v0 && b_v1 && b_e;
 }
 
@@ -1149,6 +1247,9 @@ inline double RoadSystem::getRand() const {
 	return ((double)rand()/RAND_MAX);
 }
 
+/*------------------------------------------------------
+ RoadSystem - output functions
+ ------------------------------------------------------*/
 void RoadSystem::dumpPolygons() const {
 	ofstream outputFile;
 	outputFile.open("blocks.obj");
