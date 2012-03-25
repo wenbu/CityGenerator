@@ -7,7 +7,8 @@
 #include <iostream>
 #include <fstream>
 
-
+//todo: clean up implementation
+// Mesh implementation + extrude operator?
 using namespace Eigen;
 using namespace std;
 

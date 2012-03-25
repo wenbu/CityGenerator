@@ -2,8 +2,6 @@
 #include "BuildingGenerator.h"
 #include "ImageSampler.h"
 
-
-
 using namespace std;
 BuildingGenerator::BuildingGenerator(void)
 {
@@ -470,7 +468,6 @@ void BuildingGenerator::getBuildings(double maxHeight, ImageSampler &is) {
 	for (int i = 0; i<numLots; i++) {
 		Polygon p = lots[i].lot;
 		if (p.vertices.size() >= 4 && p.vertices.size() <= 6) {
-			//printf("%i verts; trying to make KOOL BUILDIN\n", p.vertices.size());
 			// index of lot polygon: 0 = ll(lower left) , 1 = lr, 2 = ur, 3 = ul
 
 			vector<Polygon> toPush;
@@ -509,21 +506,17 @@ void BuildingGenerator::getBuildings(double maxHeight, ImageSampler &is) {
 
 			double height;
 			if (is.isValid(p)==1) {
-				//height = lr.z()+(is.getDensity(p)/255)*maxHeight;
-				//printf("\tsample at %f, %f\n", p.vertices[0][0], p.vertices[0][1]);
 				height = lr.z()+(is.getDensity(p.vertices[0][0], p.vertices[0][1])/255)*maxHeight;
 				height = pow(height, power);
 				height /= pow(maxHeight, power-1);
 				height = jitter(0.75*height, 0.25*height);
 				height += 0.1*maxHeight;
-				//printf("\tgot height = %f\n", height);
 			}
 			else{
 				height = 0;
 			}
 
 			if (height >= (0.85*maxHeight)) {
-				//printf("\tbuilding high top\n");
 				//building top facing in positive z direction
 				//make southern side, then add to(push_back) buildings[i] 
 				Polygon southSide;
@@ -604,7 +597,6 @@ void BuildingGenerator::getBuildings(double maxHeight, ImageSampler &is) {
 			}
 
 			if (height >= (0.33*maxHeight) && height < 0.85*maxHeight) {
-				//printf("\tbuilding medium top\n");
 				//building top facing in positive z direction
 				//make southern side, then add to(push_back) buildings[i] 
 				Polygon southSide;
@@ -720,7 +712,6 @@ void BuildingGenerator::getBuildings(double maxHeight, ImageSampler &is) {
 
 		}
 		if (p.vertices.size() == 3) {
-			//printf("%i verts; stuck with boring building\n", p.vertices.size());
 			vector<Polygon> toPush;
 
 			Vector3d a = (p.vertices[1] + (p.vertices[2]-p.vertices[1])*0.5) + (p.vertices[0]-((p.vertices[1] + (p.vertices[2]-p.vertices[1])*0.5)))*0.80;
@@ -729,14 +720,11 @@ void BuildingGenerator::getBuildings(double maxHeight, ImageSampler &is) {
 
 			double height;
 			if (is.isValid(p)==1) {
-				//height =  b.z()+(is.getDensity(p)/255)*maxHeight;
-				//printf("\tsample at %f, %f\n", p.vertices[0][0], p.vertices[0][1]);
 				height =  b.z()+(is.getDensity(p.vertices[0][0], p.vertices[0][1])/255)*maxHeight;
 				height = pow(height, power);
 				height /= pow(maxHeight, power-1);
 				height = jitter(0.75*height, 0.25*height);
 				height += 0.1*maxHeight;
-				//printf("\tgot height = %f\n", height);
 			}else {
 				height = 0;
 			}

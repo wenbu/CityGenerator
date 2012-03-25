@@ -13,7 +13,6 @@
 #include <fstream>
 #include <vector>
 #include "targetver.h"
-//#include <stdlib.h>
 #include <GL/glut.h>
 #include <GL/glu.h>
 #include <iostream>
@@ -73,18 +72,10 @@ void myReshape(int w, int h) {
 	viewport.w = w;
 	viewport.h = h;
 
-	glViewport(0,0,viewport.w,viewport.h);// sets the rectangle that will be the window
+	glViewport(0,0,viewport.w,viewport.h);
 	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();				// loading the identity matrix for the screen
-
-	//----------- setting the projection -------------------------
-	// glOrtho sets left, right, bottom, top, zNear, zFar of the chord system
-
-
-	//glOrtho(-1, 1 + (w-400)/200.0 , -1 -(h-400)/200.0, 1, 1, -1); // resize type = add
-	// glOrtho(-w/400.0, w/400.0, -h/400.0, h/400.0, 1, -1); // resize type = center
-
-	glOrtho(-1, 1, -1, 1, -100, 100);	// resize type = stretch
+	glLoadIdentity();
+	glOrtho(-1, 1, -1, 1, -100, 100);
 
 	//------------------------------------------------------------
 }
@@ -93,7 +84,7 @@ void myReshape(int w, int h) {
 // sets the window up
 //****************************************************
 void initScene(int &argc, char* argv[]){
-	glClearColor(1,1,1, 0.0f); // Clear to black, fully transparent
+	glClearColor(1,1,1, 0.0f);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_NORMALIZE);
 	glEnable(GL_BLEND);
@@ -103,16 +94,12 @@ void initScene(int &argc, char* argv[]){
 
 	//set up road system
 	roadsystem = RoadSystem(is, parser);
-	roadsystem.addAxiom(0.5, 0.5, 0.5125, 0.5); //coords?
-	//roadsystem.addAxiom(0.5, 0.8, 0.5125, 0.8);
-	//roadsystem.addAxiom(0.24, 0.35, 0.2525, 0.35);
-	//roadsystem.addAxiom(0.76, 0.35, 0.7725, 0.35);
+	roadsystem.addAxiom(0.5, 0.5, 0.5125, 0.5);
 	printf("-------------------------------------\n");
 	printf("Road Generation\n");
 	printf("(Space) for one iteration, (x) for 100, (z) for 1000\n");
 	printf("(i, k) to zoom, (arrows) to pan\n");
-	printf("(d) to dump roads to MEL\n");
-	printf("(f) to debug lots\n");
+	printf("(d) to dump roads to roads.mel\n");
 	printf("(p) to extract city blocks and proceed to lot subdivision\n");
 }
 
@@ -127,9 +114,7 @@ void drawPolygon(Polygon &p, double zOffset = 0) {
 }
 
 void drawWirePolygon(Polygon &p, double zOffset = 0) {
-	//printf("p: \n");
 	for(unsigned i = 0; i < p.vertices.size(); i++) {
-		//printf("    %f, %f\n", p.vertices[i][0], p.vertices[i][1]);
 		glBegin(GL_LINE_STRIP);
 		glVertex3f(p.vertices[i][0],
 				   p.vertices[i][1],
@@ -168,11 +153,7 @@ void drawStuff() {
 		}
 	}
 	if(gotLots) {
-		//roadsystem.draw();
-		//printf("   lots.size = %i\n", lots.size());
-		//printf("lg.lots.size = %i\n", lg.lots.size());
 		for(unsigned i = 0; i < lots.size(); i++) {
-			//glColor3f(0, 1, 0);
 			glColor4f(0.16, 0.64, 0.32, 0.2);
 			drawPolygon(lots[i].lot, i*debugOffset);
 			glColor3f(0,0,0);
@@ -218,47 +199,27 @@ void dumpLots() {
 //***************************************************
 void myDisplay() {
 	
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);				// clear the color buffer (sets everything to black)
-	glMatrixMode(GL_MODELVIEW);					// indicate we are specifying camera transformations
-	glLoadIdentity();							// make sure transformation is "zero'd"
-	
-	//----------------------- code to draw objects --------------------------
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
 	glScalef(2*scale, 2*scale, 2*scale);
 	glRotatef(rotateZ, 0, 0, 1);
 	glRotatef(rotateY, 0, 1, 0);
 	glRotatef(rotateX, 1, 0, 0);
 	glTranslatef(translateX-0.5, translateY-0.5, 0);
 
-	/*
-	glBegin(GL_LINE_STRIP);
-		glColor3f(1,0,0);
-		glVertex3f(0,0,0);
-		glVertex3f(10,0,0);
-	glEnd();
-	glBegin(GL_LINE_STRIP);
-		glColor3f(0,1,0);
-		glVertex3f(0,0,0);
-		glVertex3f(0,10,0);
-	glEnd();
-	glBegin(GL_LINE_STRIP);
-		glColor3f(0,0,1);
-		glVertex3f(0,0,0);
-		glVertex3f(0,0,10);
-	glEnd();
-	*/
 	drawStuff();
-	//-----------------------------------------------------------------------
 	
 	glFlush();
-	glutSwapBuffers();					// swap buffers (we earlier set double buffer)
+	glutSwapBuffers();
 }
 
 void myFrameMove() {
-	//nothing here for now
 #ifdef _WIN32
 	//Sleep(10);						//give ~10ms back to OS (so as not to waste the CPU)
 #endif
-	glutPostRedisplay(); // forces glut to call the display function (myDisplay())
+	glutPostRedisplay();
 }
 
 void grow(int n) {
@@ -267,9 +228,6 @@ void grow(int n) {
 	if(roadsystem.nIterations >= 20000) {
 		roadsystem.reset();
 		roadsystem.addAxiom(0.5, 0.5, 0.502, 0.5);
-		//roadsystem.addAxiom(0.5, 0.8, 0.502, 0.8);
-		//roadsystem.addAxiom(0.24, 0.35, 0.242, 0.35);
-		//roadsystem.addAxiom(0.76, 0.35, 0.762, 0.35);
 	}
 	glutTimerFunc(50, grow, n);
 }
@@ -279,34 +237,11 @@ void debugLots() {
 	debugOffset = 0.005;
 	vector<Polygon> debugBlocks;
 	Polygon p;
-	/*
-	v 0.398803 0 0.363752 
-	v 0.407103 0 0.352854 
-	v 0.414602 0 0.357363 
-	v 0.408383 0 0.371349 
-	v 0.401586 0 0.36584
-	*/
 	p.vertices.push_back(Vector3d(0.398803, 0.363752, 0));
 	p.vertices.push_back(Vector3d(0.407103, 0.352854, 0));
 	p.vertices.push_back(Vector3d(0.414602, 0.357363, 0));
 	p.vertices.push_back(Vector3d(0.408383, 0.371349, 0));
 	p.vertices.push_back(Vector3d(0.401586, 0.36584, 0));
-	
-	/*
-	v 0.398803 0 0.363752 
-	v 0.40167 0 0.359988 
-	v 0.411493 0 0.364356 
-	v 0.408383 0 0.371349 
-	v 0.401586 0 0.36584
-	*/
-	/*
-	p.vertices.push_back(Vector3d(0.398803, 0.363752, 0));
-	p.vertices.push_back(Vector3d(0.40167, 0.359988, 0));
-	p.vertices.push_back(Vector3d(0.411493, 0.364356, 0));
-	p.vertices.push_back(Vector3d(0.408383, 0.371349, 0));
-	p.vertices.push_back(Vector3d(0.401586, 0.36584, 0));
-	*/
-
 	debugBlocks.push_back(p);
 	lg = LotGenerator(debugBlocks,
 									parser.get(LOT_EDGE_MAX_WIDTH)*wMult,
@@ -366,6 +301,7 @@ void keyboard(unsigned char key, int x, int y) {
 	if(key == 'k') {
 		scale /= 1.1;
 	}
+	/*
 	if(key == 'u') {
 		wMult += 0.05;
 		debugLots();
@@ -374,27 +310,34 @@ void keyboard(unsigned char key, int x, int y) {
 		wMult -= 0.05;
 		debugLots();
 	}
+	*/
 	if(key == 'd') {
-		if(stage == CS_ROADS) {
+		if(stage >= CS_ROADS) {
 			printf("dumping roads to roads.mel...");
 			roadsystem.dumpRoads();
 			printf("done!\n");
 		}
-		if(stage == CS_LOTS) {
+	}
+	if(key == 'f') {
+		if(stage >= CS_LOTS) {
 			printf("dumping blocks to blocks.obj...");
 			roadsystem.dumpPolygons();
 			printf("done!\n");
 		}
-		if(stage == CS_BUILDINGS) {
+	}
+	if(key == 'g') {
+		if(stage >= CS_BUILDINGS) {
 			printf("dumping lots to lots.obj...");
 			dumpLots();
 			printf("done!\n");
 		}
 	}
+	/*
 	if(key == 'f') {
 		printf("debugging\n");
 		debugLots();
 	}
+	*/
 	if(key == 'p') {
 		switch(stage) {
 		case(CS_ROADS):
@@ -408,8 +351,8 @@ void keyboard(unsigned char key, int x, int y) {
 			printf("-------------------------------------\n");
 			printf("Lot Subdivision\n");
 			printf("(p) to generate lots\n");
-			printf("(d) to dump polygons\n");
-			printf("(f) to debug lots\n");
+			printf("(f) to dump blocks to blocks.obj\n");
+			printf("(d) to dump roads to roads.mel\n");
 			printf("The code likes to blow up at this stage :(\n");
 			printf("If it does, just restart the program\n");
 			break;
@@ -426,7 +369,9 @@ void keyboard(unsigned char key, int x, int y) {
 			printf("-------------------------------------\n");
 			printf("Building Generation\n");
 			printf("(p) to generate buildings\n");
-			printf("(d) to dump lots\n");
+			printf("(g) to dump lots to lots.obj\n");
+			printf("(f) to dump blocks to blocks.obj\n");
+			printf("(d) to dump roads to roads.mel\n");
 			printf("output will be written to outputFile.obj\n");
 			break;
 		case(CS_BUILDINGS):
@@ -436,6 +381,9 @@ void keyboard(unsigned char key, int x, int y) {
 			bg.generateObjFile();
 			printf("done!\n");
 			printf("(p) to quit\n");
+			printf("(g) to dump lots to lots.obj\n");
+			printf("(f) to dump blocks to blocks.obj\n");
+			printf("(d) to dump roads to roads.mel\n");
 			stage = CS_DONE;
 			break;
 		case(CS_DONE):
@@ -498,14 +446,14 @@ int main(int argc, char* argv[])
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  	initScene(argc, argv);							// quick function to set up scene
+  	initScene(argc, argv);
   
-  	glutDisplayFunc(myDisplay);				// function to run when its time to draw something
-  	glutReshapeFunc(myReshape);				// function to run when the window gets resized
-  	glutIdleFunc(myFrameMove);				// function to run when not handling any other task
+  	glutDisplayFunc(myDisplay);
+  	glutReshapeFunc(myReshape);
+  	glutIdleFunc(myFrameMove);
 	glutKeyboardFunc(keyboard);
 	glutSpecialFunc(mySpecial);
-  	glutMainLoop();							// infinite loop that will keep drawing and resizing and whatever else
+  	glutMainLoop();
 	
 	is.done();
 	return 0;

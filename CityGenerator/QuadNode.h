@@ -6,7 +6,6 @@
 
 class QuadPoint {
 public:
-	//Intersection* intersection;
 	Vector3d position;
 	int index;
 	QuadPoint(Intersection* isecn, int i) {position = Vector3d(isecn->position[0],isecn->position[1],isecn->position[2]); index = i;}
@@ -18,7 +17,6 @@ class QuadNode {
 	static const int MAX_SIZE;
 
 	QuadNode* children[4];
-	//set<QuadPoint*> contents;
 	vector<QuadPoint*> contents;
 	bool isLeaf; //isLeaf == !(children are defined)
 	Vector3d SplitPoint;

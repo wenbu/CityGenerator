@@ -6,7 +6,7 @@
 using namespace Eigen;
 using namespace std;
 
-class Intersection; //stupid c++
+class Intersection;
 
 enum RoadType {
 	RT_AXIOM,
@@ -28,13 +28,9 @@ struct ruleAttr {
 class Road {
 	int intersections[2];
 	ruleAttr r;
-	//double angle;
 public:
 	Road(void);
 	~Road(void);
-	//Road(double x1, double y1, double x2, double y2);
-	//Road(Intersection* endpoint1, Intersection* endpoint2, double angle);
-	//Road(int i1, int i2, double angle);
 	Road(int i1, int i2, ruleAttr &r);
 	Road(int i1, int i2, RoadType type, double angle, double majorAxis);
 	int getIntersection(int index) const;

@@ -1,34 +1,6 @@
 #include "StdAfx.h"
 #include "RoadSystem.h"
 
-/*
-const double RoadSystem::QUERY_DIST = 0.0125; //should be slightly more than half the max road length
-const double RoadSystem::SNAP_THRESHOLD = 0.007; //0.0025
-const double RoadSystem::FINAL_SNAP_THRESHOLD = 0.00125;
-const double RoadSystem::ROAD_LENGTH_MAJOR = 0.00625; //0.03
-const double RoadSystem::ROAD_LENGTH_MINOR = 0.00625; //0.018
-const double RoadSystem::ROAD_LENGTH_HIGHWAY = 0.0125; //0.042
-const double RoadSystem::ROAD_LENGTH_JITTER = 0; //0.006
-const double RoadSystem::EVAL_DELAY_HIGHWAY = 1;
-const double RoadSystem::EVAL_DELAY_MAJOR = 5000;
-const double RoadSystem::EVAL_DELAY_MINOR = 6000;
-const double RoadSystem::CUTOFF_HIGHWAY_GROWTH = 1000;
-const double RoadSystem::NUM_HIGHWAY_PROBES = 10;
-const double RoadSystem::ANGLE_HIGHWAY_PROBES = 0.8; // pi/4
-const double RoadSystem::HIGHWAY_PROBE_JITTER = 0.3;
-const double RoadSystem::WEIGHT_HIGHWAY_TERRAIN = 0.2; //0.4
-const double RoadSystem::WEIGHT_HIGHWAY_TERRAIN_JITTER = 0.2; //0.2
-const double RoadSystem::HIGHWAY_PROMOTION_PROBABILITY = 0.05;
-const double RoadSystem::GRID_DEVIATION_PROBABILITY = 0.0; //0.1    
-const double RoadSystem::GRID_DEVIATION_AMOUNT = 1.46; //1.46
-const double RoadSystem::SIDE_ROAD_PROBABILITY = 1;
-const double RoadSystem::COST_THRESHOLD = 1;
-const double RoadSystem::COST_THRESHOLD_JITTER = 0.2;
-const double RoadSystem::COST_INTERSECTION_OVERLOAD = 0.3;
-const double RoadSystem::COST_ROAD_SHORTENING = 0; //35
-const double RoadSystem::COST_ROAD_LENGTHENING = 10; //10
-const double RoadSystem::BONUS_INTERSECTION_UNDERLOAD = -10; //-0.3
-*/
 double RoadSystem::QUERY_DIST = 0.0125; //should be slightly more than half the max road length
 double RoadSystem::SNAP_THRESHOLD = 0.0044; //0.0025
 double RoadSystem::FINAL_SNAP_THRESHOLD = 0.00125;
@@ -201,7 +173,6 @@ bool RoadSystem::insertVertex(double x, double y, int i) {
 //don't think we'll need this one
 //can't remove from qtree atm anyway
 bool RoadSystem::removeVertex(int i) {
-	//printf("REMOVE VERTEX\n");
 	Vertices::iterator iter = vertices.find(i);
 	if(iter != vertices.end()) {
 		Vertex* v = iter->second;
@@ -218,13 +189,11 @@ bool RoadSystem::removeVertex(int i) {
 bool RoadSystem::insertEdge(int i0, int i1, roadAttr r) {
 	Vertex* v0 = (Vertex*)getVertex(i0);
 	if(!v0) {
-		//printf(":: v0 does not exist\n");
 		return false;
 	}
 	
 	Vertex* v1 = (Vertex*)getVertex(i1);
 	if(!v1) {
-		//printf(":: v1 does not exist\n");
 		return false;
 	}
 
@@ -240,7 +209,6 @@ bool RoadSystem::insertEdge(int i0, int i1, roadAttr r) {
 		v1->insert(v0);
 		return true;
 	}
-	//cout << ":: " << i0 << "-" << i1 << " already exists" << endl;
 	return false;
 }
 
@@ -407,7 +375,6 @@ void RoadSystem::addAxiom(double x0, double y0, double x1, double y1) {
 	
 	ProposedEdge e(0, RT_AXIOM, 0, 0, axiomVerts, axiomVerts+1);
 	roadQueue.push(e);
-	//printf("pushing edge %i-%i\n", axiomVerts, axiomVerts+1);
 	axiomVerts += 2;
 }
 
@@ -422,7 +389,6 @@ void RoadSystem::acceptProposal(ProposedEdge &pe, int &i0, int &i1) {
 					 i0);
 	}
 	if(pe.V[1] >= 0) {
-		//if(pe.splitRoad) printf("existing vk\n");
 		i1 = pe.V[1];
 	} else {
 		//double check quadtree for nearby snap targets
@@ -450,10 +416,8 @@ void RoadSystem::acceptProposal(ProposedEdge &pe, int &i0, int &i1) {
 					dist = curDist;
 				}
 			}
-			//if(pe.splitRoad) printf("snapped to existing vk\n");
 			i1 = closest;
 		} else {
-			//if(pe.splitRoad) printf("new vk\n");
 			i1 = vertices.size();
 			insertVertex(pe.newVertices[1][0], 
 						 pe.newVertices[1][1],
@@ -471,7 +435,6 @@ void RoadSystem::acceptProposal(ProposedEdge &pe, int &i0, int &i1) {
 		int vk = i1;
 
 		EdgeKey e(vi, vj);
-		//if(areConnected(vi, vj)) printf("SHIT\n");
 		bool huh1 = insertEdge(vi, vk, edges[e]);
 		bool huh2 = insertEdge(vk, vj, edges[e]);
 		removeEdge(vi, vj);
@@ -640,7 +603,6 @@ void RoadSystem::globalGoals(int t, int i0, int i1) {
 			//to be promoted to highways
 			double x, y, z;
 			double fAngle = getHighwayPoint(angle, Vector3d(x1, y1, z1), x, y, z);
-			//double delay = ((t+EVAL_DELAY_HIGHWAY)/rho)*(nIterations/300);
 			double delay = (t+EVAL_DELAY_HIGHWAY)/rho;
 			ProposedEdge newHighway(delay, RT_HIGHWAY, fAngle, fAngle,
 									i1, x, y);
@@ -657,12 +619,11 @@ void RoadSystem::globalGoals(int t, int i0, int i1) {
 							 i == 0? 0 : 2, x, y, z);
 				ProposedEdge ne;
 				if(getRand() > HIGHWAY_PROMOTION_PROBABILITY) {
-					//you lose the promotion roll, scrub
+					//you lose the promotion roll
 					delay = (t+EVAL_DELAY_MAJOR)/rho;
 					ne = ProposedEdge(delay, RT_GRID_MAJOR,
 									  angle+a[i]+j, axis+j, i1, x, y);
 				} else if(nIterations < CUTOFF_HIGHWAY_GROWTH && branchDelay == 0) {
-					//delay = ((t+EVAL_DELAY_HIGHWAY)/rho)*(nIterations/300);
 					delay = (t+EVAL_DELAY_HIGHWAY)/rho;
 					ne = ProposedEdge(delay, RT_HIGHWAY,
 									  angle+a[i]+j, angle+a[i]+j, i1, x, y);
@@ -679,11 +640,8 @@ void RoadSystem::globalGoals(int t, int i0, int i1) {
 			for(unsigned i = 0; i < 3; i++) {
 				ProposedEdge ne;
 				if(i == 1) {
-					//getGridPoint(angle, Vector3d(x1, y1, z1), j, i, x, y, z);
 					double fAngle = getHighwayPoint(angle, Vector3d(x1, y1, z1), x, y, z);
 					delay = (t+EVAL_DELAY_MAJOR)/rho;
-					//ne = ProposedEdge(delay, RT_GRID_MAJOR,
-					//				  angle+a[i]+j, axis+j, i1, x, y);
 					ne = ProposedEdge(delay, RT_GRID_MAJOR, fAngle, fAngle,
 									  i1, x, y);
 				} else {
@@ -724,15 +682,6 @@ bool RoadSystem::snapIntersections(ProposedEdge &e,
 								   vector<QuadPoint*> &nV, 
 								   double &cost) {
 	if(nV.size() == 0) return false;
-
-	/*
-	int i0 = e.V[0];
-	double x1 = e.newVertices[1][0];
-	double y1 = e.newVertices[1][1];
-	Vector3d vpIsec(x1, y1, 0);
-	Vertex* v0 = (Vertex*) getVertex(i0);
-	Vector3d vpIsec = v0->position;
-	*/
 	int i0 = e.V[0];
 	if(e.V[1] >= 0) return false; //don't move existing verts
 	double x1 = e.newVertices[1][0];
@@ -763,7 +712,6 @@ bool RoadSystem::snapIntersections(ProposedEdge &e,
 	double y2 = v2->position[1];
 
 	if(dist > SNAP_THRESHOLD) {
-		//printf("distance too high; snap rejected\n");
 		return false;
 	} else {
 		//cost = distance moved
@@ -895,32 +843,6 @@ bool RoadSystem::checkLegality(ProposedEdge &e, double &cost) {
 			double dot = unitEdge.dot(adjEdge);
 			if(dot > 0.94) return false;
 		}
-		//query for verts in vicinity, check for stuff close by
-		//assemble query box
-		/*
-		vector<QuadPoint*> nearV;
-		Vector3d perpEdge = Vector3d(-unitEdge[1], unitEdge[0], 0);
-		Vector3d qv = QUERY_DIST * -unitEdge; //negative since unitEdge here is v1->v0
-		Vector3d qp = QUERY_DIST * perpEdge;
-		//Vector3d qf = -0.1 * QUERY_DIST * -unitEdge;
-		Vector3d q0 = v1 - 0.5* qv - 0.5 * qp;
-		Vector3d q1 = v1 + qv - qp;
-		Vector3d q2 = v1 + qv + qp;
-		Vector3d q3 = v1 - 0.5* qv + 0.5 * qp;
-		qtree.query(q0, q1, q2, q3, nearV);
-		//what's the expected amount of stuff in nearV?
-		if(DEBUG) {
-			int nVerts = nearV.size() - 1; //dont want to count root of road
-			if(e.V[1] >= 0) nVerts -= 1; //dont want to count terminal if exists
-			printf("verts in box: %i\n", nVerts);
-			debugQuads.push_back((Vector6d() << q0, 1, 0, 0).finished());
-			debugQuads.push_back((Vector6d() << q1, 1, 0.25, 0).finished());
-			debugQuads.push_back((Vector6d() << q2, 1, 0.5, 0).finished());
-			debugQuads.push_back((Vector6d() << q3, 1, 0.75, 0).finished());
-			debugEdges.push_back((Vector6d() << v0, 0, 1, 0).finished());
-			debugEdges.push_back((Vector6d() << v1, 0, 0, 1).finished());
-		}
-		*/
 		
 		//todo: have road follow contour of boundary
 		return legal(e.newVertices[1][0], e.newVertices[1][1]);
@@ -958,7 +880,6 @@ double RoadSystem::getHighwayPoint(double srcAngle, Vector3d &src,
 void RoadSystem::getGridPoint(double srcAngle, Vector3d &src, double j, int i, 
 							  double &x, double &y, double &z) const {
 	double dA[3] = {-1.57, 0, 1.57};
-	//double newAngle = srcAngle + dA[i] + j;
 	double lJ = jitter(0, ROAD_LENGTH_JITTER);
 	double l1 = ROAD_LENGTH_MAJOR + lJ;
 	double l2 = ROAD_LENGTH_MINOR + lJ;
@@ -990,6 +911,9 @@ void RoadSystem::getPolygons() {
 			E.push_back(ek.V[0]);
 			E.push_back(ek.V[1]);
 		}
+
+		//generate a new Graph with the same data
+		//since minimal cycle basis extraction is destructive
 		Graph G(V, E);
 		G.getPolygons(polys);
 		int origSize = polys.size();
@@ -1010,7 +934,6 @@ void RoadSystem::getPolygons() {
 				}
 
 				double s = 0.7;
-				//double s = 1;
 				for(unsigned i = 0; i < polys[p].vertices.size(); i++) {
 					Vector3d newpoint = polys[p].vertices[i];
 					newpoint -= avg;
@@ -1058,7 +981,6 @@ void RoadSystem::drawDebug() const {
 		glEnd();
 	}
 	//draw verts
-	//glPointSize(3);
 	for(unsigned i = 0; i < debugVerts.size(); i++) {
 		Vector6d v = debugVerts[i];
 		if(v[3] == 1 && v[4] == 0 && v[5] == 0)
@@ -1076,21 +998,6 @@ void RoadSystem::draw(bool drawBlocks, bool drawQuadTree) const {
 	double x0, y0, z0, x1, y1, z1;
 	if(drawQuadTree)
 		qtree.draw();
-	/*
-	for(unsigned i = 0; i < probeVec.size(); i+=2) {
-		x0 = probeVec[i][0];
-		y0 = probeVec[i][1];
-		z0 = probeVec[i][2];
-		x1 = probeVec[i+1][0];
-		y1 = probeVec[i+1][1];
-		z1 = probeVec[i+1][2];
-		glBegin(GL_LINE_STRIP);
-			glColor3f(1,0.5,0);
-			glVertex3f(x0,y0,z0);
-			glVertex3f(x1,y1,z1);
-		glEnd();
-	}
-	*/
 	if(DEBUG)
 		drawDebug();
 	for(Edges::const_iterator iter = edges.begin();
@@ -1119,19 +1026,19 @@ void RoadSystem::draw(bool drawBlocks, bool drawQuadTree) const {
 				glVertex3f(x1, y1, z1);
 				break;
 			case RT_GRID_MAJOR:
-				glColor4f(0, 0.5, 0.5, 0.5); //0.6 0.6 0.6
+				glColor4f(0, 0.5, 0.5, 0.5);
 				glVertex3f(x0, y0, z0);
 				glColor4f(0.1, 0.1, 0.1, 0.5);
 				glVertex3f(x1, y1, z1);
 				break;
 			case RT_HIGHWAY:
-				glColor4f(1, 0.5, 0, 0.5); //1, 0.6, 0.1
+				glColor4f(1, 0.5, 0, 0.5);
 				glVertex3f(x0, y0, z0);
 				glColor4f(0.1, 0.1, 0.1, 0.5);
 				glVertex3f(x1, y1, z1);
 				break;
 			case RT_AXIOM:
-				glColor4f(1,0.5,0, 0.5); //0, 1, 0
+				glColor4f(1,0.5,0, 0.5);
 				glVertex3f(x0, y0, z0);
 				glColor4f(0.1, 0.1, 0.1, 0.5);
 				glVertex3f(x1, y1, z1);
@@ -1210,11 +1117,6 @@ void RoadSystem::getEdges(Vector3d q0, Vector3d q1, Vector3d q2, Vector3d q3,
 }
 
 double RoadSystem::elevation(double x, double y) const {
-	//placeholder
-	//return 0.1*(sin(6*x)+cos(9*y));
-	//return (x-1)*(x-1) + (y-1)*(y-1);
-	//return x;
-	//return 1;
 	return ((double)is.getElevation(x, y))/255;
 }
 
@@ -1223,11 +1125,7 @@ double RoadSystem::density(double x, double y) const {
 }
 
 bool RoadSystem::legal(double x, double y) const {
-	//return true;
-	//return (x-0.5)*(x-0.5) + (y-0.5)*(y-0.5) < 0.25;
-	//return 0 < x && x < 1 && 0 < y && y < 1;
 	bool valid = is.isValid(x, y);
-	//printf("valid? %i\n", valid);
 	return valid;
 }
 

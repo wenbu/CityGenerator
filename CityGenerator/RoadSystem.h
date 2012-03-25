@@ -15,7 +15,7 @@
 #include <iostream>
 #include <fstream>
 
-#define DEBUG true
+#define DEBUG false
 
 using namespace std;
 using namespace Eigen;
@@ -117,7 +117,7 @@ class RoadSystem {
 	};
 
 	/**
-	* when adding new roadAttrs
+	* when adding new roadAttr members
 	* need to update:
 	*  - ProposedRoad constructors
 	*  - insertEdge
@@ -185,8 +185,6 @@ class RoadSystem {
 	typedef map<EdgeKey, roadAttr> Edges;
 
 	QuadNode qtree; //for spatial queries
-	//vector<const Road> roads;
-	//vector<const Intersection> intersections;
 	Vertices vertices;
 	Edges edges;
 	vector<Polygon> polys;
@@ -197,8 +195,6 @@ class RoadSystem {
 	vector<Vector6d> debugEdges;
 	vector<Vector6d> debugQuads;
 	bool gotPolys;
-	//vector<const Road> roadDrawBuffer;
-	//vector<const Intersection> intersectionDrawBuffer;
 	Vector3d minCoord, maxCoord;
 	priority_queue<ProposedEdge, vector<ProposedEdge>, ProposedEdgeComparator> roadQueue;
 	ImageSampler is;
@@ -218,8 +214,8 @@ public:
 	~RoadSystem(void);
 	RoadSystem(ImageSampler &img, InputParser &parser);
 	void generate(int iterations);
-	bool localConstraints(ProposedEdge &r); //intersection & legality checks/modifications
-	void globalGoals(int t, int i0, int i1); //highways->pop density; streets follow dominant dir
+	bool localConstraints(ProposedEdge &r);
+	void globalGoals(int t, int i0, int i1);
 	void addAxiom(double x1, double y1, double x2, double y2);
 	void draw(bool drawBlocks = false, bool drawQuadTree = false) const;
 	void printStats() const;
@@ -275,7 +271,7 @@ private:
 	double density(double x, double y) const;
 	bool legal(double x, double y) const;
 
-	//RNG
+	//RNG stuff
 
 	//returns number in range [c-r, c+r]
 	double jitter(double center, double range) const;

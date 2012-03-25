@@ -6,14 +6,12 @@
 using namespace std;
 using namespace Eigen;
 
-class Road; //stupid c++
+class Road;
 
 class Intersection {
-	//double position[3];
 	vector<int> roads;
 	//intersectiontype?
 public:
-	//double position[3];
 	Vector3d position;
 	Intersection(void);
 	~Intersection(void);

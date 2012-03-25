@@ -1,3 +1,8 @@
+/**---------------------
+* All code in Graph.* more or less lifted from
+* http://www.geometrictools.com
+----------------------**/
+
 #pragma once
 #include "stdafx.h"
 #include "Polygon.h"
