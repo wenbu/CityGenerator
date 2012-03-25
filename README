@@ -1,1 +1,41 @@
-CityGenerator README.
+CityGenerator - Procedural City Generator
+James Gu, Camilo King, Ben Wu
+
+CityGenerator was written and can be compiled with Visual Studio 2010.
+
+CityGenerator takes in user parameters and image maps and produces a model of a city (in .obj format).
+CityGenerator can also output the road network (in the form of a MEL file for use in Maya), city blocks (obj),
+or the building lots (also obj).
+
+Usage:
+/CityGenerator -f [Input File Name] -d [Density Map] -e [Elevation Map] -l [Legality Map]
+If no input is specified, default inputs are used instead:
+
+	Input: 		input.txt
+	Density: 	density.png
+	Elevation:	elevation.png
+	Validity: 	legality.png
+
+Image maps must be 512x512 and grayscale.
+
+ - The input file specifies a number of parameters used by the city generator. Documentation on these to be added later.
+ 
+ - The density map specifies the population density. Brighter areas are considered to have higher density than darker areas.
+   Roads grow faster and lots are larger in high density areas.
+   
+ - The elevation map specifies the elevation. Brighter areas are considered to be higher than darker areas. Some roads will
+   follow the elevation contours as they grow (i.e. they minimize elevation changes). Note that the output building
+   geometry isn't actually offset vertically at this time, so the elevation map mainly serves to guide the shape of the road
+   network.
+
+ - The legality map specifies the areas that are illegal for road growth. Only black (RGB = 0,0,0) areas are considered illegal
+   (i.e. roads with endpoints in illegal areas are pruned).  
+
+Other usage information is printed to the terminal.
+
+LICENSING STUFF
+This software uses the Eigen open source linear algebra library. See http://eigen.tuxfamily.org for details.
+Eigen is used under the GPL.
+
+This software uses the FreeImage open source image library. See http://freeimage.sourceforge.net for details.
+FreeImage is used under the GPL, version 3.0.
